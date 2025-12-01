@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gift Battle - Mini App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000; /* Dark background outside the app */
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Mobile App Container */
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            background-color: #f2f2f2;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Reel Styles */
+        .reel-section {
+            position: relative;
+            padding-top: 20px;
+            padding-bottom: 20px;
+            background: transparent;
+        }
+
+        .reel-container {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            /* Fade edges for 3D effect */
+            mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+        }
+
+        .reel-strip {
+            display: flex;
+            will-change: transform;
+            /* Start with no translation */
+            transform: translateX(0); 
+        }
+
+        .reel-item {
+            flex: 0 0 33.333%; /* 3 items visible */
+            padding: 0 6px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            width: 100%;
+            aspect-ratio: 0.75; /* Tall card */
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Center Line & Pointer */
+        .center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(0,0,0,0.8);
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+
+        .pointer-triangle {
+            position: absolute;
+            top: 18px; /* Slightly overlapping the cards */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 18px solid #222;
+            z-index: 20;
+            filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));
+        }
+
+        .pointer-circle {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background-color: white;
+            border-radius: 50%;
+            z-index: 21;
+        }
+
+        /* Prize Grid Card */
+        .grid-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.1s;
+        }
+        .grid-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Modal Animation */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-content-anim {
+            animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* TikTok Live Logo Style Placeholder */
+        .tiktok-live-badge {
+            background: linear-gradient(45deg, #25F4EE, #FE2C55);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            font-style: italic;
+        }
+
+        /* Custom Button Gradients */
+        .btn-start {
+            background: #2ca4f9; /* Solid blue as seen in video usually, or gradient */
+            background: linear-gradient(to right, #2ca4f9, #1e8ee9);
+        }
+        
+        .btn-receive {
+            background: linear-gradient(90deg, #fe2c55 0%, #ff4b7d 100%);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 z-10 shrink-0">
+            <button class="text-gray-800 text-xl w-8 text-left flex items-center">
+                <i class="fas fa-chevron-left"></i>
+                <span class="text-sm font-semibold ml-1">Back</span>
+            </button>
+            <div class="text-center">
+                <h1 class="font-bold text-[17px] leading-none text-gray-900">Gifts Battle</h1>
+                <p class="text-[11px] text-gray-400 mt-[2px]">mini-application</p>
+            </div>
+            <div class="w-8"></div>
+        </header>
+
+        <!-- Main Scrollable Content -->
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-24">
+            
+            <!-- Reel Section -->
+            <div class="reel-section">
+                <!-- Decorative Top/Bottom Lines or Shadows could go here -->
+                
+                <div class="pointer-triangle"></div>
+                <!-- <div class="pointer-circle"></div> -->
+                <div class="center-line h-[180px] sm:h-[220px]"></div>
+
+                <div class="reel-container h-[180px] sm:h-[220px]">
+                    <div class="reel-strip" id="reelStrip">
+                        <!-- JS Injected Items -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chance Text -->
+            <div class="text-center mb-5">
+                <p class="text-gray-600 text-[15px]">You have a <span class="font-bold text-black">1/1</span> chance</p>
+            </div>
+
+            <!-- Start Button -->
+            <div class="px-6 mb-8">
+                <button id="spinBtn" class="btn-start w-full text-white font-bold text-[19px] py-3.5 rounded-full shadow-lg active:scale-95 transition-transform">
+                    Start
+                </button>
+            </div>
+
+            <!-- Prize List Header -->
+            <div class="px-4 mb-3">
+                <h3 class="text-gray-800 font-semibold text-[15px]">You can win...</h3>
+            </div>
+
+            <!-- Prize Grid -->
+            <div class="px-4 pb-4">
+                <div class="grid grid-cols-3 gap-3" id="prizeGrid">
+                    <!-- JS Injected Grid Items -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Navigation -->
+        <div class="bg-white border-t border-gray-200 h-[60px] flex justify-between items-center px-6 text-[10px] text-gray-400 absolute bottom-0 w-full z-20">
+            <div class="flex flex-col items-center gap-1 cursor-pointer hover:text-black transition-colors w-1/5">
+                <i class="fas fa-home text-xl"></i>
+                <span>Home</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 cursor-pointer hover:text-black transition-colors w-1/5">
+                <i class="far fa-compass text-xl"></i>
+                <span>Discover</span>
+            </div>
+            <div class="flex justify-center items-center w-1/5 relative cursor-pointer active:scale-95 transition-transform">
+                <!-- TikTok Plus Button -->
+                <div class="w-11 h-7 bg-black rounded-lg flex items-center justify-center relative">
+                    <div class="absolute left-[2px] top-1/2 -translate-y-1/2 h-[60%] w-[110%] bg-cyan-400 rounded-lg -z-10 blur-[1px]"></div>
+                    <div class="absolute right-[2px] top-1/2 -translate-y-1/2 h-[60%] w-[110%] bg-red-500 rounded-lg -z-10 blur-[1px]"></div>
+                    <div class="w-full h-full bg-black rounded-lg flex items-center justify-center z-10 border-x-2 border-black">
+                         <i class="fas fa-plus text-white text-sm font-bold"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col items-center gap-1 cursor-pointer hover:text-black transition-colors w-1/5">
+                <i class="far fa-comment-dots text-xl"></i>
+                <span>Inbox</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 cursor-pointer hover:text-black transition-colors w-1/5">
+                <i class="far fa-user text-xl"></i>
+                <span>Me</span>
+            </div>
+        </div>
+
+        <!-- WIN MODAL -->
+        <div id="winModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center px-8 backdrop-blur-[2px]">
+            <div class="bg-white rounded-xl w-full max-w-[320px] p-5 text-center shadow-2xl modal-content-anim relative">
+                
+                <!-- Close X -->
+                <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-black p-2">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+
+                <!-- Prize Image Big -->
+                <div class="w-full flex justify-center mb-2 mt-4">
+                    <div class="relative w-32 h-32 flex items-center justify-center">
+                        <!-- Glow effect -->
+                        <div class="absolute inset-0 bg-blue-400/20 blur-xl rounded-full"></div>
+                        <div id="modalIconContainer" class="relative z-10 transform scale-125">
+                            <!-- Icon injected here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- TikTok Live Logo (Overlay Style if needed) -->
+                <div class="relative z-10 mb-6">
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Gift Unlocked</div>
+                    <h2 class="text-xl font-bold text-gray-800 leading-tight" id="modalTitle">
+                        You have received a gift
+                    </h2>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex flex-col gap-3">
+                    <button onclick="closeModal()" class="btn-receive w-full text-white font-bold text-[15px] py-3 rounded-[8px] shadow-sm active:scale-95 transition-transform">
+                        Receive
+                    </button>
+                    <button onclick="closeModal()" class="bg-white border border-gray-200 text-gray-700 font-bold text-[15px] py-3 rounded-[8px] hover:bg-gray-50 active:scale-95 transition-transform">
+                        Give a gift to a friend
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA ---
+        // Updated with user provided images
+        const prizes = [
+            { id: 1, name: 'Rare Knife', src: 'https://i.ibb.co/ZpxLY4m6/gift1.webp', chance: '0.5%' },
+            { id: 2, name: 'Common Skin', src: 'https://i.ibb.co/mCdCQX8Z/gift2.webp', chance: '15%' },
+            { id: 3, name: 'Stickers', src: 'https://i.ibb.co/b5VckzTT/gift3.webp', chance: '8%' },
+            { id: 4, name: 'Rare Skin', src: 'https://i.ibb.co/hJP8svJJ/gift4.webp', chance: '3%' },
+            { id: 5, name: 'Common Skin', src: 'https://i.ibb.co/7JzjcBvM/gift5.webp', chance: '15%' },
+            { id: 6, name: 'Case', src: 'https://i.ibb.co/d4Ctmz05/gift6.webp', chance: '10%' },
+            { id: 7, name: 'Common Skin', src: 'https://i.ibb.co/B24wxPg2/gift7.webp', chance: '15%' },
+            { id: 8, name: 'Rare Skin', src: 'https://i.ibb.co/gZmY3gtW/gift8.webp', chance: '3%' },
+            { id: 9, name: 'Epic Gloves', src: 'https://i.ibb.co/hRFqt90C/gift9.webp', chance: '1%' },
+            { id: 10, name: 'Common Skin', src: 'https://i.ibb.co/QvphLh27/gift10.webp', chance: '15%' },
+            { id: 11, name: 'Stickers', src: 'https://i.ibb.co/4n79cVDV/gift11.webp', chance: '8%' },
+            { id: 12, name: 'Rare Skin', src: 'https://i.ibb.co/0pqJg4DH/gift12.webp', chance: '3%' },
+            { id: 13, name: 'Common Skin', src: 'https://i.ibb.co/ynzdH4G6/gift13.webp', chance: '15%' },
+            { id: 14, name: 'Legendary AWP', src: 'https://i.ibb.co/GQ8CtrDG/gift14.webp', chance: '0.1%' },
+        ];
+
+        const reelStrip = document.getElementById('reelStrip');
+        const prizeGrid = document.getElementById('prizeGrid');
+        const spinBtn = document.getElementById('spinBtn');
+        const winModal = document.getElementById('winModal');
+        const modalIconContainer = document.getElementById('modalIconContainer');
+
+        let isSpinning = false;
+
+        // 1. RENDER PRIZE GRID
+        function renderGrid() {
+            prizeGrid.innerHTML = prizes.map(p => `
+                <div class="grid-card flex flex-col items-center p-2 pb-3 h-[130px] justify-between border border-gray-100">
+                    <div class="w-full flex justify-start">
+                         <span class="bg-gray-100 text-gray-500 text-[10px] font-bold px-1.5 py-0.5 rounded">${p.chance}</span>
+                    </div>
+                    <div class="flex-1 flex items-center justify-center w-full px-2">
+                        <img src="${p.src}" class="w-full h-16 object-contain drop-shadow-sm" alt="${p.name}">
+                    </div>
+                    <span class="text-[11px] font-semibold text-gray-700 truncate w-full text-center mt-1">${p.name}</span>
+                </div>
+            `).join('');
+        }
+
+        // 2. RENDER REEL STRIP
+        // Create an infinite loop illusion by duplicating the array many times
+        const loops = 8; 
+        const expandedPrizes = [];
+        for(let i=0; i<loops; i++) expandedPrizes.push(...prizes);
+
+        function renderReel() {
+            reelStrip.innerHTML = expandedPrizes.map((p, i) => `
+                <div class="reel-item">
+                    <div class="card border border-gray-100 bg-gradient-to-b from-gray-50 to-white">
+                        <div class="flex-1 flex items-center justify-center p-2 w-full h-full">
+                             <img src="${p.src}" class="w-full h-full object-contain drop-shadow-md" alt="${p.name}">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 3. SPIN LOGIC
+        spinBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinBtn.classList.add('opacity-80', 'scale-95');
+
+            // Pick random winner
+            const winnerIndex = Math.floor(Math.random() * prizes.length);
+            const winner = prizes[winnerIndex];
+
+            // Calculate stop position
+            const targetSet = loops - 3; 
+            const totalIndex = (targetSet * prizes.length) + winnerIndex;
+            const translatePercent = (totalIndex - 1) * 33.333;
+
+            // Reset
+            reelStrip.style.transition = 'none';
+            reelStrip.style.transform = 'translateX(0)';
+            
+            // Force reflow
+            reelStrip.offsetHeight;
+
+            // Animate
+            setTimeout(() => {
+                // Bezier curve for "Spin up -> Spin fast -> Slow down -> Snap" effect
+                reelStrip.style.transition = 'transform 4.5s cubic-bezier(0.2, 0.8, 0.1, 1)'; 
+                reelStrip.style.transform = `translateX(-${translatePercent}%)`;
+            }, 50);
+
+            // End
+            setTimeout(() => {
+                showModal(winner);
+                isSpinning = false;
+                spinBtn.classList.remove('opacity-80', 'scale-95');
+            }, 4600);
+        });
+
+        function showModal(prize) {
+            modalIconContainer.innerHTML = `<img src="${prize.src}" class="w-full h-full object-contain drop-shadow-2xl filter brightness-110" alt="${prize.name}">`;
+            winModal.classList.remove('hidden');
+            document.getElementById('modalTitle').innerText = `You won: ${prize.name}`;
+        }
+
+        function closeModal() {
+            winModal.classList.add('hidden');
+        }
+
+        // Init
+        renderReel();
+        renderGrid();
+
+    </script>
+</body>
+</html>
